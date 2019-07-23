@@ -339,6 +339,10 @@ func gasCreate2(gt params.GasTable, evm *EVM, contract *Contract, stack *Stack, 
 	if gas, overflow = math.SafeAdd(gas, params.Create2Gas); overflow {
 		return 0, errGasUintOverflow
 	}
+	if evm.IsPreBering() {
+		return gas, nil
+	}
+	
 	wordGas, overflow := bigUint64(stack.Back(2))
 	if overflow {
 		return 0, errGasUintOverflow
