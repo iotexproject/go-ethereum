@@ -251,6 +251,7 @@ var (
 		TerminalTotalDifficultyPassed: false,
 		Ethash:                        new(EthashConfig),
 		Clique:                        nil,
+		BeringBlock:                   big.NewInt(0),
 	}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
@@ -281,6 +282,7 @@ var (
 		TerminalTotalDifficultyPassed: false,
 		Ethash:                        nil,
 		Clique:                        &CliqueConfig{Period: 0, Epoch: 30000},
+		BeringBlock:                   big.NewInt(0),
 	}
 
 	// TestChainConfig contains every protocol change (EIPs) introduced
@@ -311,6 +313,7 @@ var (
 		TerminalTotalDifficultyPassed: false,
 		Ethash:                        new(EthashConfig),
 		Clique:                        nil,
+		BeringBlock:                   big.NewInt(0),
 	}
 
 	// NonActivatedConfig defines the chain configuration without activating
@@ -341,6 +344,7 @@ var (
 		TerminalTotalDifficultyPassed: false,
 		Ethash:                        new(EthashConfig),
 		Clique:                        nil,
+		BeringBlock:                   nil,
 	}
 	TestRules = TestChainConfig.Rules(new(big.Int), false, 0)
 )
@@ -450,6 +454,9 @@ type ChainConfig struct {
 	// Various consensus engines
 	Ethash *EthashConfig `json:"ethash,omitempty"`
 	Clique *CliqueConfig `json:"clique,omitempty"`
+
+	// The following are the iotex configs
+	BeringBlock *big.Int `json:"beringBlock,omitempty"` // Bering switch block that ignores CREATE2 gas
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -653,6 +660,11 @@ func (c *ChainConfig) IsCancun(time uint64) bool {
 // IsPrague returns whether num is either equal to the Prague fork time or greater.
 func (c *ChainConfig) IsPrague(time uint64) bool {
 	return isTimestampForked(c.PragueTime, time)
+}
+
+// IsBering returns whether num represents a block number after the Bering block
+func (c *ChainConfig) IsBering(num *big.Int) bool {
+	return isBlockForked(c.BeringBlock, num)
 }
 
 // CheckCompatible checks whether scheduled fork transitions have been imported
