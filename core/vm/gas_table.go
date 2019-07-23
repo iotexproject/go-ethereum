@@ -291,6 +291,9 @@ func gasCreate2(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memoryS
 	if err != nil {
 		return 0, err
 	}
+	if !evm.chainConfig.IsBering(evm.Context.BlockNumber) {
+		return gas, nil
+	}
 	wordGas, overflow := stack.Back(2).Uint64WithOverflow()
 	if overflow {
 		return 0, ErrGasUintOverflow
