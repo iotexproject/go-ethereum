@@ -783,12 +783,7 @@ func TestRuntimeJSTracer(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, _, err = Call(main, nil, &Config{
-				GasLimit: 1000000,
-				State:    statedb,
-				EVMConfig: vm.Config{
-					Tracer: tracer.Hooks,
-				}})
+			_, _, err = Call(main, nil, createPostBeringConfig(statedb, tracer.Hooks))
 			if err != nil {
 				t.Fatal("didn't expect error", err)
 			}
@@ -801,6 +796,19 @@ func TestRuntimeJSTracer(t *testing.T) {
 			}
 		}
 	}
+}
+
+func createPostBeringConfig(s *state.StateDB, l *tracing.Hooks) *Config {
+	c := Config{
+		GasLimit: 1000000,
+		State:    s,
+		EVMConfig: vm.Config{
+			Tracer: l,
+		}}
+	setDefaults(&c)
+	c.ChainConfig.BeringBlock = big.NewInt(0)
+	c.BlockNumber = big.NewInt(1)
+	return &c
 }
 
 func TestJSTracerCreateTx(t *testing.T) {

@@ -186,6 +186,7 @@ var (
 		VerkleTime:              nil,
 		Ethash:                  new(EthashConfig),
 		Clique:                  nil,
+		BeringBlock:             big.NewInt(0),
 	}
 
 	AllDevChainProtocolChanges = &ChainConfig{
@@ -241,6 +242,7 @@ var (
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
 		Ethash:                  nil,
 		Clique:                  &CliqueConfig{Period: 0, Epoch: 30000},
+		BeringBlock:             big.NewInt(0),
 	}
 
 	// TestChainConfig contains every protocol change (EIPs) introduced
@@ -271,6 +273,7 @@ var (
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
 		Ethash:                  new(EthashConfig),
 		Clique:                  nil,
+		BeringBlock:             big.NewInt(0),
 	}
 
 	// MergedTestChainConfig contains every protocol change (EIPs) introduced
@@ -335,6 +338,7 @@ var (
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
 		Ethash:                  new(EthashConfig),
 		Clique:                  nil,
+		BeringBlock:             nil,
 	}
 	TestRules = TestChainConfig.Rules(new(big.Int), false, 0)
 )
@@ -434,6 +438,9 @@ type ChainConfig struct {
 	Ethash             *EthashConfig       `json:"ethash,omitempty"`
 	Clique             *CliqueConfig       `json:"clique,omitempty"`
 	BlobScheduleConfig *BlobScheduleConfig `json:"blobSchedule,omitempty"`
+
+	// The following are the iotex configs
+	BeringBlock *big.Int `json:"beringBlock,omitempty"` // Bering switch block that ignores CREATE2 gas
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -651,6 +658,11 @@ func (c *ChainConfig) IsOsaka(num *big.Int, time uint64) bool {
 // IsVerkle returns whether time is either equal to the Verkle fork time or greater.
 func (c *ChainConfig) IsVerkle(num *big.Int, time uint64) bool {
 	return c.IsLondon(num) && isTimestampForked(c.VerkleTime, time)
+}
+
+// IsBering returns whether num represents a block number after the Bering block
+func (c *ChainConfig) IsBering(num *big.Int) bool {
+	return isBlockForked(c.BeringBlock, num)
 }
 
 // IsVerkleGenesis checks whether the verkle fork is activated at the genesis block.
