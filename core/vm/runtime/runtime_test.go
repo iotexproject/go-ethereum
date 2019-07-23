@@ -858,12 +858,7 @@ func TestRuntimeJSTracer(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, _, err = Call(main, nil, &Config{
-				State: statedb,
-				EVMConfig: vm.Config{
-					Debug:  true,
-					Tracer: tracer,
-				}})
+			_, _, err = Call(main, nil, createPostBeringConfig(statedb, tracer))
 			if err != nil {
 				t.Fatal("didn't expect error", err)
 			}
@@ -876,6 +871,19 @@ func TestRuntimeJSTracer(t *testing.T) {
 			}
 		}
 	}
+}
+
+func createPostBeringConfig(s *state.StateDB, l vm.EVMLogger) *Config {
+	c := Config{
+		State: s,
+		EVMConfig: vm.Config{
+			Debug:  true,
+			Tracer: l,
+		}}
+	setDefaults(&c)
+	c.ChainConfig.BeringBlock = big.NewInt(0)
+	c.BlockNumber = big.NewInt(1)
+	return &c
 }
 
 func TestJSTracerCreateTx(t *testing.T) {
