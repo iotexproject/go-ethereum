@@ -26,9 +26,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// Bering height upgrade
-var Bering = big.NewInt(1106641)
-
 // emptyCodeHash is used by create to ensure deployment is disallowed to already
 // deployed contract addresses (relevant after the account abstraction).
 var emptyCodeHash = crypto.Keccak256Hash(nil)
@@ -473,5 +470,5 @@ func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *
 func (evm *EVM) ChainConfig() *params.ChainConfig { return evm.chainConfig }
 
 func (evm *EVM) IsPreBering() bool {
-	return evm.Context.BlockNumber.Cmp(Bering) == -1
+	return evm.Context.BlockNumber.Cmp(evm.chainConfig.BeringBlock) == -1
 }
