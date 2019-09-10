@@ -293,6 +293,7 @@ type ChainConfig struct {
 	Ethash *EthashConfig `json:"ethash,omitempty"`
 	Clique *CliqueConfig `json:"clique,omitempty"`
 
+	// The following are the iotex configs
 	BeringBlock *big.Int `json:"beringBlock,omitempty"`
 }
 
