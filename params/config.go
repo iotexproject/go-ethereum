@@ -166,6 +166,7 @@ var (
 		Ethash:                        new(EthashConfig),
 		Clique:                        nil,
 		BeringBlock:                   big.NewInt(0),
+		GreenlandBlock:                nil,
 	}
 
 	AllDevChainProtocolChanges = &ChainConfig{
@@ -217,6 +218,7 @@ var (
 		Ethash:                        nil,
 		Clique:                        &CliqueConfig{Period: 0, Epoch: 30000},
 		BeringBlock:                   big.NewInt(0),
+		GreenlandBlock:                nil,
 	}
 
 	// TestChainConfig contains every protocol change (EIPs) introduced
@@ -248,6 +250,7 @@ var (
 		Ethash:                        new(EthashConfig),
 		Clique:                        nil,
 		BeringBlock:                   big.NewInt(0),
+		GreenlandBlock:                nil,
 	}
 
 	// MergedTestChainConfig contains every protocol change (EIPs) introduced
@@ -309,6 +312,7 @@ var (
 		Ethash:                        new(EthashConfig),
 		Clique:                        nil,
 		BeringBlock:                   nil,
+		GreenlandBlock:                nil,
 	}
 	TestRules = TestChainConfig.Rules(new(big.Int), false, 0)
 )
@@ -372,6 +376,8 @@ type ChainConfig struct {
 
 	// The following are the iotex configs
 	BeringBlock *big.Int `json:"beringBlock,omitempty"` // Bering switch block that ignores CREATE2 gas
+	// at Greenland height, we fix the bug that earlier forks are not enabled
+	GreenlandBlock *big.Int `json:"greenlandBlock,omitempty"` // (nil = not enable, >= BeringBlock = enable)
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -487,6 +493,9 @@ func (c *ChainConfig) Description() string {
 
 // IsHomestead returns whether num is either equal to the homestead block or greater.
 func (c *ChainConfig) IsHomestead(num *big.Int) bool {
+	if c.GreenlandBlock != nil {
+		return isBlockForked(c.GreenlandBlock, num)
+	}
 	return isBlockForked(c.HomesteadBlock, num)
 }
 
@@ -497,21 +506,33 @@ func (c *ChainConfig) IsDAOFork(num *big.Int) bool {
 
 // IsEIP150 returns whether num is either equal to the EIP150 fork block or greater.
 func (c *ChainConfig) IsEIP150(num *big.Int) bool {
+	if c.GreenlandBlock != nil {
+		return isBlockForked(c.GreenlandBlock, num)
+	}
 	return isBlockForked(c.EIP150Block, num)
 }
 
 // IsEIP155 returns whether num is either equal to the EIP155 fork block or greater.
 func (c *ChainConfig) IsEIP155(num *big.Int) bool {
+	if c.GreenlandBlock != nil {
+		return isBlockForked(c.GreenlandBlock, num)
+	}
 	return isBlockForked(c.EIP155Block, num)
 }
 
 // IsEIP158 returns whether num is either equal to the EIP158 fork block or greater.
 func (c *ChainConfig) IsEIP158(num *big.Int) bool {
+	if c.GreenlandBlock != nil {
+		return isBlockForked(c.GreenlandBlock, num)
+	}
 	return isBlockForked(c.EIP158Block, num)
 }
 
 // IsByzantium returns whether num is either equal to the Byzantium fork block or greater.
 func (c *ChainConfig) IsByzantium(num *big.Int) bool {
+	if c.GreenlandBlock != nil {
+		return isBlockForked(c.GreenlandBlock, num)
+	}
 	return isBlockForked(c.ByzantiumBlock, num)
 }
 
