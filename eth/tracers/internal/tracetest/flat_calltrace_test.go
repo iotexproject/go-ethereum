@@ -111,7 +111,11 @@ func flatCallTracerTestRunner(tracerName string, filename string, dirPath string
 	if err != nil {
 		return fmt.Errorf("failed to prepare transaction for tracing: %v", err)
 	}
-	evm := vm.NewEVM(context, state.StateDB, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
+	testConfig := test.Genesis.Config
+	if testConfig.IsEIP150(context.BlockNumber) {
+		testConfig.ConstantinopleBlock = new(big.Int).Set(context.BlockNumber)
+	}
+	evm := vm.NewEVM(context, state.StateDB, testConfig, vm.Config{Tracer: tracer.Hooks})
 	tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
 	vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
 	if err != nil {

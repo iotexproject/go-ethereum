@@ -405,7 +405,13 @@ func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 			}
 		}
 	}
-	evm.callGasTemp, err = callGas(evm.chainRules.IsEIP150, contract.Gas, gas, stack.Back(0))
+
+	// an earlier commit changed to pass in isEip150 bool:
+	// https://github.com/ethereum/go-ethereum/commit/aa6005b469fdd1aa7a95f501ce87908011f43159#diff-baa18df76685ce9789034fc85c0111073e088b48a19568e08acba4888f191d27R38
+	// on our mainnet, IsEIP150 was not correctly enabled until Greenland, we pass in isConstantinople instead
+	// b/c at the time of our mainnet launch, Ethereum was using Constantinople gas table, with CreateBySuicide = 25000,
+	// same as that of EIP150 gas table
+	evm.callGasTemp, err = callGas(evm.chainRules.IsConstantinople, contract.Gas, gas, stack.Back(0))
 	if err != nil {
 		return 0, err
 	}
@@ -441,7 +447,7 @@ func gasCallCode(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 			}
 		}
 	}
-	evm.callGasTemp, err = callGas(evm.chainRules.IsEIP150, contract.Gas, gas, stack.Back(0))
+	evm.callGasTemp, err = callGas(evm.chainRules.IsConstantinople, contract.Gas, gas, stack.Back(0))
 	if err != nil {
 		return 0, err
 	}
@@ -456,7 +462,7 @@ func gasDelegateCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 	if err != nil {
 		return 0, err
 	}
-	evm.callGasTemp, err = callGas(evm.chainRules.IsEIP150, contract.Gas, gas, stack.Back(0))
+	evm.callGasTemp, err = callGas(evm.chainRules.IsConstantinople, contract.Gas, gas, stack.Back(0))
 	if err != nil {
 		return 0, err
 	}
@@ -472,7 +478,7 @@ func gasStaticCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memo
 	if err != nil {
 		return 0, err
 	}
-	evm.callGasTemp, err = callGas(evm.chainRules.IsEIP150, contract.Gas, gas, stack.Back(0))
+	evm.callGasTemp, err = callGas(evm.chainRules.IsConstantinople, contract.Gas, gas, stack.Back(0))
 	if err != nil {
 		return 0, err
 	}
