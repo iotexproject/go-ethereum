@@ -853,7 +853,8 @@ func TestRuntimeJSTracer(t *testing.T) {
 
 func createPostBeringConfig(s *state.StateDB, l vm.EVMLogger) *Config {
 	c := Config{
-		State: s,
+		GasLimit: 1000000,
+		State:    s,
 		EVMConfig: vm.Config{
 			Debug:  true,
 			Tracer: l,
