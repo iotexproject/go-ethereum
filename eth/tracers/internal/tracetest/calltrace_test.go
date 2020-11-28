@@ -145,7 +145,11 @@ func testCallTracer(tracerName string, dirPath string, t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to prepare transaction for tracing: %v", err)
 			}
-			evm := vm.NewEVM(context, core.NewEVMTxContext(msg), statedb, test.Genesis.Config, vm.Config{Tracer: tracer})
+			testConfig := test.Genesis.Config
+			if testConfig.IsEIP150(context.BlockNumber) {
+				testConfig.ConstantinopleBlock = new(big.Int).Set(context.BlockNumber)
+			}
+			evm := vm.NewEVM(context, core.NewEVMTxContext(msg), statedb, testConfig, vm.Config{Tracer: tracer})
 			vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
 			if err != nil {
 				t.Fatalf("failed to execute transaction: %v", err)
