@@ -1,3 +1,19 @@
+// Copyright 2018 The go-ethereum Authors
+// This file is part of go-ethereum.
+//
+// go-ethereum is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// go-ethereum is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with go-ethereum. If not, see <http://www.gnu.org/licenses/>.
+
 package main
 
 import (
@@ -12,15 +28,15 @@ import (
 
 var newPassphraseFlag = cli.StringFlag{
 	Name:  "newpasswordfile",
-	Usage: "the file that contains the new passphrase for the keyfile",
+	Usage: "the file that contains the new password for the keyfile",
 }
 
 var commandChangePassphrase = cli.Command{
-	Name:      "changepassphrase",
-	Usage:     "change the passphrase on a keyfile",
+	Name:      "changepassword",
+	Usage:     "change the password on a keyfile",
 	ArgsUsage: "<keyfile>",
 	Description: `
-Change the passphrase of a keyfile.`,
+Change the password of a keyfile.`,
 	Flags: []cli.Flag{
 		passphraseFlag,
 		newPassphraseFlag,
@@ -42,12 +58,12 @@ Change the passphrase of a keyfile.`,
 		}
 
 		// Get a new passphrase.
-		fmt.Println("Please provide a new passphrase")
+		fmt.Println("Please provide a new password")
 		var newPhrase string
 		if passFile := ctx.String(newPassphraseFlag.Name); passFile != "" {
 			content, err := ioutil.ReadFile(passFile)
 			if err != nil {
-				utils.Fatalf("Failed to read new passphrase file '%s': %v", passFile, err)
+				utils.Fatalf("Failed to read new password file '%s': %v", passFile, err)
 			}
 			newPhrase = strings.TrimRight(string(content), "\r\n")
 		} else {
@@ -57,7 +73,7 @@ Change the passphrase of a keyfile.`,
 		// Encrypt the key with the new passphrase.
 		newJson, err := keystore.EncryptKey(key, newPhrase, keystore.StandardScryptN, keystore.StandardScryptP)
 		if err != nil {
-			utils.Fatalf("Error encrypting with new passphrase: %v", err)
+			utils.Fatalf("Error encrypting with new password: %v", err)
 		}
 
 		// Then write the new keyfile in place of the old one.
