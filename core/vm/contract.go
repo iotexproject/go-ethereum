@@ -27,6 +27,19 @@ type ContractRef interface {
 	Address() common.Address
 }
 
+// ContractStruct means the backing object is the Contract struct{}
+type ContractStruct interface {
+	AsDelegate() *Contract
+	GetOp(n uint64) OpCode
+	GetByte(n uint64) byte
+	Caller() common.Address
+	UseGas(gas uint64) bool
+	Address() common.Address
+	Value() *big.Int
+	SetCallCode(addr *common.Address, hash common.Hash, code []byte)
+	SetCodeOptionalHash(addr *common.Address, codeAndHash *codeAndHash)
+}
+
 // AccountRef implements ContractRef.
 //
 // Account references are used during EVM initialisation and

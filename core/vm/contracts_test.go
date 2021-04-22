@@ -481,3 +481,18 @@ func BenchmarkPrecompiledBn256Pairing(bench *testing.B) {
 		benchmarkPrecompiled("08", test, bench)
 	}
 }
+
+// Tests the ContractStruct interface.
+func TestContractStructInterface(t *testing.T) {
+	var contract ContractRef = AccountRef(common.HexToAddress("1337"))
+	_, isContract := contract.(ContractStruct)
+	if isContract {
+		t.Error("AccountRef should not implement ContractStruct interface")
+	}
+
+	contract = NewContract(contract, nil, new(big.Int), 0)
+	_, isContract = contract.(ContractStruct)
+	if !isContract {
+		t.Error("Contract struct{} should implement ContractStruct interface")
+	}
+}
