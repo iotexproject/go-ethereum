@@ -79,3 +79,16 @@ func TestCheckCompatible(t *testing.T) {
 		}
 	}
 }
+
+func TestHawaii(t *testing.T) {
+	config := *TestChainConfig
+	hawaii := uint64(128)
+	config.HawaiiBlock = new(big.Int).SetUint64(hawaii)
+
+	if config.IsHawaii(new(big.Int).SetUint64(hawaii - 1)) {
+		t.Error("IsHawaii should be false for hawaiiHeight - 1")
+	}
+	if !config.IsHawaii(config.HawaiiBlock) {
+		t.Error("IsHawaii should be true for hawaiiHeight")
+	}
+}
