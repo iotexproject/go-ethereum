@@ -276,3 +276,8 @@ func (s *hookedStateDB) Finalise(deleteEmptyObjects bool) {
 		}
 	}
 }
+
+// InitNonce returns the initial nonce
+func (s *hookedStateDB) InitNonce() uint64 {
+	return 0
+}
