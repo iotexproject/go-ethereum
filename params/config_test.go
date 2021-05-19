@@ -96,3 +96,29 @@ func TestCheckCompatible(t *testing.T) {
 		}
 	}
 }
+
+func TestIceland(t *testing.T) {
+	c := *TestChainConfig
+	iceland := uint64(128)
+	c.IcelandBlock = new(big.Int).SetUint64(iceland)
+
+	if isForked(c.IcelandBlock, new(big.Int).SetUint64(iceland - 1)) {
+		t.Error("isForked should be false for IcelandBlock - 1")
+	}
+	if !isForked(c.IcelandBlock, c.IcelandBlock) {
+		t.Error("isForked should be true for IcelandBlock")
+	}
+
+	for _, v := range []uint64{
+		iceland - 1,
+		iceland,
+	} {
+		height := new(big.Int).SetUint64(v)
+		if c.IsIstanbul(height) != isForked(c.IcelandBlock, height) {
+			t.Error("IsIstanbul() should be == isForked(c.IcelandBlock, )")
+		}
+		if c.IsMuirGlacier(height) != isForked(c.IcelandBlock, height) {
+			t.Error("IsMuirGlacier() should be == isForked(c.IcelandBlock, )")
+		}
+	}
+}
