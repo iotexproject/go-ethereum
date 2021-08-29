@@ -225,16 +225,16 @@ var (
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllEthashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, new(EthashConfig), nil, big.NewInt(0), nil}
+	AllEthashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, new(EthashConfig), nil, big.NewInt(0), nil, nil}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Clique consensus.
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, &CliqueConfig{Period: 0, Epoch: 30000}, big.NewInt(0), nil}
+	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, &CliqueConfig{Period: 0, Epoch: 30000}, big.NewInt(0), nil, nil}
 
-	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, new(EthashConfig), nil, big.NewInt(0), nil}
+	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, new(EthashConfig), nil, big.NewInt(0), nil, nil}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )
 
@@ -323,7 +323,10 @@ type ChainConfig struct {
 	// The following are the iotex configs
 	BeringBlock *big.Int `json:"beringBlock,omitempty"` // Bering switch block that ignores CREATE2 gas
 	// at Greenland height, we fix the bug that earlier forks are not enabled
-	GreenlandBlock *big.Int `json:"greenlandBlock,omitempty"` // (nil = not enable, >= BeringBlock = enable)
+	GreenlandBlock *big.Int `json:"greenlandBlock,omitempty"` // (nil = not enable, >= GreenlandBlock = enable)
+	// for safety, at Jutland height, we enable the fix for CVE-2021-39137
+	// to be reverted post-Jutland if verified that this is not necessary
+	JutlandBlock *big.Int `json:"jutlandBlock,omitempty"` // (nil = not enable, >= JutlandBlock = enable)
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -460,6 +463,11 @@ func (c *ChainConfig) IsCatalyst(num *big.Int) bool {
 // IsBering returns whether num represents a block number after the Bering block
 func (c *ChainConfig) IsBering(num *big.Int) bool {
 	return isForked(c.BeringBlock, num)
+}
+
+// IsJutland returns whether num represents a block number after the Jutland block
+func (c *ChainConfig) IsJutland(num *big.Int) bool {
+	return isForked(c.JutlandBlock, num)
 }
 
 // CheckCompatible checks whether scheduled fork transitions have been imported

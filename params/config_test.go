@@ -96,3 +96,16 @@ func TestCheckCompatible(t *testing.T) {
 		}
 	}
 }
+
+func TestJutland(t *testing.T) {
+	c := *TestChainConfig
+	jutland := uint64(256)
+	c.JutlandBlock = new(big.Int).SetUint64(jutland)
+
+	if isForked(c.JutlandBlock, new(big.Int).SetUint64(jutland-1)) {
+		t.Error("isForked should be false for JutlandBlock - 1")
+	}
+	if !isForked(c.JutlandBlock, c.JutlandBlock) {
+		t.Error("isForked should be true for JutlandBlock")
+	}
+}
