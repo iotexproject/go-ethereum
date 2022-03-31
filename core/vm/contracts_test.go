@@ -300,6 +300,14 @@ func TestPrecompileBlake2FMalformedInput(t *testing.T) {
 
 func TestPrecompiledEcrecover(t *testing.T) { testJson("ecRecover", "01", t) }
 
+func TestPrecompiledSecp256r1Fail(t *testing.T) {
+	testJsonFail("secp256r1", "8001", t)
+}
+
+func TestPrecompiledSecp256r1(t *testing.T) {
+	testJson("secp256r1", "8001", t)
+}
+
 func testJson(name, addr string, t *testing.T) {
 	tests, err := loadJson(name)
 	if err != nil {
