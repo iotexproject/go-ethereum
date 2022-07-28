@@ -18,6 +18,11 @@ package vm
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -46,25 +51,26 @@ type precompiledFailureTest struct {
 // allPrecompiles does not map to the actual set of precompiles, as it also contains
 // repriced versions of precompiles at certain slots
 var allPrecompiles = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{1}):    &ecrecover{},
-	common.BytesToAddress([]byte{2}):    &sha256hash{},
-	common.BytesToAddress([]byte{3}):    &ripemd160hash{},
-	common.BytesToAddress([]byte{4}):    &dataCopy{},
-	common.BytesToAddress([]byte{5}):    &bigModExp{eip2565: false},
-	common.BytesToAddress([]byte{0xf5}): &bigModExp{eip2565: true},
-	common.BytesToAddress([]byte{6}):    &bn256AddIstanbul{},
-	common.BytesToAddress([]byte{7}):    &bn256ScalarMulIstanbul{},
-	common.BytesToAddress([]byte{8}):    &bn256PairingIstanbul{},
-	common.BytesToAddress([]byte{9}):    &blake2F{},
-	common.BytesToAddress([]byte{10}):   &bls12381G1Add{},
-	common.BytesToAddress([]byte{11}):   &bls12381G1Mul{},
-	common.BytesToAddress([]byte{12}):   &bls12381G1MultiExp{},
-	common.BytesToAddress([]byte{13}):   &bls12381G2Add{},
-	common.BytesToAddress([]byte{14}):   &bls12381G2Mul{},
-	common.BytesToAddress([]byte{15}):   &bls12381G2MultiExp{},
-	common.BytesToAddress([]byte{16}):   &bls12381Pairing{},
-	common.BytesToAddress([]byte{17}):   &bls12381MapG1{},
-	common.BytesToAddress([]byte{18}):   &bls12381MapG2{},
+	common.BytesToAddress([]byte{1}):      &ecrecover{},
+	common.BytesToAddress([]byte{2}):      &sha256hash{},
+	common.BytesToAddress([]byte{3}):      &ripemd160hash{},
+	common.BytesToAddress([]byte{4}):      &dataCopy{},
+	common.BytesToAddress([]byte{5}):      &bigModExp{eip2565: false},
+	common.BytesToAddress([]byte{0xf5}):   &bigModExp{eip2565: true},
+	common.BytesToAddress([]byte{6}):      &bn256AddIstanbul{},
+	common.BytesToAddress([]byte{7}):      &bn256ScalarMulIstanbul{},
+	common.BytesToAddress([]byte{8}):      &bn256PairingIstanbul{},
+	common.BytesToAddress([]byte{9}):      &blake2F{},
+	common.BytesToAddress([]byte{10}):     &bls12381G1Add{},
+	common.BytesToAddress([]byte{11}):     &bls12381G1Mul{},
+	common.BytesToAddress([]byte{12}):     &bls12381G1MultiExp{},
+	common.BytesToAddress([]byte{13}):     &bls12381G2Add{},
+	common.BytesToAddress([]byte{14}):     &bls12381G2Mul{},
+	common.BytesToAddress([]byte{15}):     &bls12381G2MultiExp{},
+	common.BytesToAddress([]byte{16}):     &bls12381Pairing{},
+	common.BytesToAddress([]byte{17}):     &bls12381MapG1{},
+	common.BytesToAddress([]byte{18}):     &bls12381MapG2{},
+	common.BytesToAddress([]byte{128, 1}): &secp256r1{},
 }
 
 // EIP-152 test vectors
@@ -191,6 +197,28 @@ func benchmarkPrecompiled(addr string, test precompiledTest, bench *testing.B) {
 	})
 }
 
+// Benchmarks the sample inputs from the Secp256r1 precompile
+func BenchmarkPrecompiledSecp256r1(bench *testing.B) {
+	priKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	hashed := sha256.Sum256([]byte("testing"))
+	r, s, err := ecdsa.Sign(rand.Reader, priKey, hashed[:])
+	if err != nil {
+		bench.Error(err)
+		return
+	}
+	rb := make([]byte, 32)
+	r.FillBytes(rb)
+	sb := make([]byte, 32)
+	s.FillBytes(sb)
+	pubKey := priKey.PublicKey
+	t := precompiledTest{
+		Input:    hex.EncodeToString(append(append(append(hashed[:], rb...), sb...), elliptic.Marshal(pubKey.Curve, pubKey.X, pubKey.Y)...)),
+		Expected: "01",
+		Name:     "",
+	}
+	benchmarkPrecompiled("8001", t, bench)
+}
+
 // Benchmarks the sample inputs from the ECRECOVER precompile.
 func BenchmarkPrecompiledEcrecover(bench *testing.B) {
 	t := precompiledTest{
@@ -271,6 +299,14 @@ func TestPrecompileBlake2FMalformedInput(t *testing.T) {
 }
 
 func TestPrecompiledEcrecover(t *testing.T) { testJson("ecRecover", "01", t) }
+
+func TestPrecompiledSecp256r1Fail(t *testing.T) {
+	testJsonFail("secp256r1", "8001", t)
+}
+
+func TestPrecompiledSecp256r1(t *testing.T) {
+	testJson("secp256r1", "8001", t)
+}
 
 func testJson(name, addr string, t *testing.T) {
 	tests, err := loadJson(name)
