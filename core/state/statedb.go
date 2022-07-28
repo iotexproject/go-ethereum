@@ -260,11 +260,6 @@ func (s *StateDB) Empty(addr common.Address) bool {
 	return so == nil || so.empty()
 }
 
-// InitNonce returns the initial nonce
-func (s *StateDB) InitNonce() uint64 {
-	return 0
-}
-
 // GetBalance retrieves the balance from the given address or 0 if object not found
 func (s *StateDB) GetBalance(addr common.Address) *big.Int {
 	stateObject := s.getStateObject(addr)
@@ -272,6 +267,11 @@ func (s *StateDB) GetBalance(addr common.Address) *big.Int {
 		return stateObject.Balance()
 	}
 	return common.Big0
+}
+
+// IsNewAccount returns true if this is a new account
+func (s *StateDB) IsNewAccount(addr common.Address) bool {
+	return s.GetNonce(addr) == 0
 }
 
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
