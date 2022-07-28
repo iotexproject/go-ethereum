@@ -18,6 +18,11 @@ package vm
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -65,6 +70,8 @@ var allPrecompiles = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{0x0f, 0x0e}): &bls12381Pairing{},
 	common.BytesToAddress([]byte{0x0f, 0x0f}): &bls12381MapG1{},
 	common.BytesToAddress([]byte{0x0f, 0x10}): &bls12381MapG2{},
+
+	common.BytesToAddress([]byte{128, 1}): &secp256r1{},
 }
 
 // EIP-152 test vectors
@@ -191,6 +198,28 @@ func benchmarkPrecompiled(addr string, test precompiledTest, bench *testing.B) {
 	})
 }
 
+// Benchmarks the sample inputs from the Secp256r1 precompile
+func BenchmarkPrecompiledSecp256r1(bench *testing.B) {
+	priKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	hashed := sha256.Sum256([]byte("testing"))
+	r, s, err := ecdsa.Sign(rand.Reader, priKey, hashed[:])
+	if err != nil {
+		bench.Error(err)
+		return
+	}
+	rb := make([]byte, 32)
+	r.FillBytes(rb)
+	sb := make([]byte, 32)
+	s.FillBytes(sb)
+	pubKey := priKey.PublicKey
+	t := precompiledTest{
+		Input:    hex.EncodeToString(append(append(append(hashed[:], rb...), sb...), elliptic.Marshal(pubKey.Curve, pubKey.X, pubKey.Y)...)),
+		Expected: "01",
+		Name:     "",
+	}
+	benchmarkPrecompiled("8001", t, bench)
+}
+
 // Benchmarks the sample inputs from the ECRECOVER precompile.
 func BenchmarkPrecompiledEcrecover(bench *testing.B) {
 	t := precompiledTest{
@@ -271,6 +300,14 @@ func TestPrecompileBlake2FMalformedInput(t *testing.T) {
 }
 
 func TestPrecompiledEcrecover(t *testing.T) { testJson("ecRecover", "01", t) }
+
+func TestPrecompiledSecp256r1Fail(t *testing.T) {
+	testJsonFail("secp256r1", "8001", t)
+}
+
+func TestPrecompiledSecp256r1(t *testing.T) {
+	testJson("secp256r1", "8001", t)
+}
 
 func testJson(name, addr string, t *testing.T) {
 	tests, err := loadJson(name)

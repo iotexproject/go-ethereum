@@ -277,7 +277,7 @@ func (s *hookedStateDB) Finalise(deleteEmptyObjects bool) {
 	}
 }
 
-// InitNonce returns the initial nonce
-func (s *hookedStateDB) InitNonce() uint64 {
-	return 0
+// IsNewAccount returns true if this is a new account
+func (s *hookedStateDB) IsNewAccount(addr common.Address) bool {
+	return s.GetNonce(addr) == 0
 }

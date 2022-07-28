@@ -17,6 +17,8 @@
 package vm
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
@@ -89,15 +91,16 @@ var PrecompiledContractsIstanbul = PrecompiledContracts{
 // PrecompiledContractsBerlin contains the default set of pre-compiled Ethereum
 // contracts used in the Berlin release.
 var PrecompiledContractsBerlin = PrecompiledContracts{
-	common.BytesToAddress([]byte{0x1}): &ecrecover{},
-	common.BytesToAddress([]byte{0x2}): &sha256hash{},
-	common.BytesToAddress([]byte{0x3}): &ripemd160hash{},
-	common.BytesToAddress([]byte{0x4}): &dataCopy{},
-	common.BytesToAddress([]byte{0x5}): &bigModExp{eip2565: true},
-	common.BytesToAddress([]byte{0x6}): &bn256AddIstanbul{},
-	common.BytesToAddress([]byte{0x7}): &bn256ScalarMulIstanbul{},
-	common.BytesToAddress([]byte{0x8}): &bn256PairingIstanbul{},
-	common.BytesToAddress([]byte{0x9}): &blake2F{},
+	common.BytesToAddress([]byte{0x1}):    &ecrecover{},
+	common.BytesToAddress([]byte{0x2}):    &sha256hash{},
+	common.BytesToAddress([]byte{0x3}):    &ripemd160hash{},
+	common.BytesToAddress([]byte{0x4}):    &dataCopy{},
+	common.BytesToAddress([]byte{0x5}):    &bigModExp{eip2565: true},
+	common.BytesToAddress([]byte{0x6}):    &bn256AddIstanbul{},
+	common.BytesToAddress([]byte{0x7}):    &bn256ScalarMulIstanbul{},
+	common.BytesToAddress([]byte{0x8}):    &bn256PairingIstanbul{},
+	common.BytesToAddress([]byte{0x9}):    &blake2F{},
+	common.BytesToAddress([]byte{128, 1}): &secp256r1{},
 }
 
 // PrecompiledContractsCancun contains the default set of pre-compiled Ethereum
@@ -1181,4 +1184,34 @@ func kZGToVersionedHash(kzg kzg4844.Commitment) common.Hash {
 	h[0] = blobCommitmentVersionKZG
 
 	return h
+}
+
+var (
+	errSecp256r1InvalidInputLength = errors.New("invalid input length")
+	errSecp256r1InvalidCurvePoint  = errors.New("invalid curve point")
+)
+
+// secp256r1 implements secp256r1 signature verification
+type secp256r1 struct{}
+
+func (s *secp256r1) RequiredGas(input []byte) uint64 {
+	return params.EcrecoverGas
+}
+
+func (sec *secp256r1) Run(input []byte) ([]byte, error) {
+	if len(input) <= 96 {
+		return nil, errSecp256r1InvalidInputLength
+	}
+	hash := input[:32]
+	r := new(big.Int).SetBytes(input[32:64])
+	s := new(big.Int).SetBytes(input[64:96])
+	curve := elliptic.P256()
+	x, y := elliptic.Unmarshal(curve, input[96:])
+	if x == nil || y == nil {
+		return nil, errSecp256r1InvalidCurvePoint
+	}
+	if ecdsa.Verify(&ecdsa.PublicKey{Curve: curve, X: x, Y: y}, hash, r, s) {
+		return []byte{1}, nil
+	}
+	return []byte{0}, nil
 }
