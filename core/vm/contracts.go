@@ -17,6 +17,8 @@
 package vm
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
@@ -104,6 +106,8 @@ var PrecompiledContractsBerlin = PrecompiledContracts{
 	common.BytesToAddress([]byte{0x7}): &bn256ScalarMulIstanbul{},
 	common.BytesToAddress([]byte{0x8}): &bn256PairingIstanbul{},
 	common.BytesToAddress([]byte{0x9}): &blake2F{},
+
+	common.BytesToAddress([]byte{128, 1}): &iotexSecp256r1{},
 }
 
 // PrecompiledContractsCancun contains the default set of pre-compiled Ethereum
@@ -1451,4 +1455,42 @@ func (c *p256Verify) Run(input []byte) ([]byte, error) {
 
 func (c *p256Verify) Name() string {
 	return "P256VERIFY"
+}
+
+var (
+	errSecp256r1InvalidInputLength = errors.New("invalid input length")
+	errSecp256r1InvalidCurvePoint  = errors.New("invalid curve point")
+)
+
+// iotexSecp256r1 implements IoTeX's secp256r1 signature verification precompile at 0x8001.
+// It is NOT the same as EIP-7951 P256VERIFY (p256Verify at 0x100): different input
+// encoding (uncompressed SEC1 pubkey), gas, output and error semantics.
+// The type was renamed from secp256r1 to avoid clashing with the crypto/secp256r1
+// package imported since go-ethereum v1.16; behavior is unchanged.
+type iotexSecp256r1 struct{}
+
+func (s *iotexSecp256r1) RequiredGas(input []byte) uint64 {
+	return params.EcrecoverGas
+}
+
+func (sec *iotexSecp256r1) Run(input []byte) ([]byte, error) {
+	if len(input) <= 96 {
+		return nil, errSecp256r1InvalidInputLength
+	}
+	hash := input[:32]
+	r := new(big.Int).SetBytes(input[32:64])
+	s := new(big.Int).SetBytes(input[64:96])
+	curve := elliptic.P256()
+	x, y := elliptic.Unmarshal(curve, input[96:])
+	if x == nil || y == nil {
+		return nil, errSecp256r1InvalidCurvePoint
+	}
+	if ecdsa.Verify(&ecdsa.PublicKey{Curve: curve, X: x, Y: y}, hash, r, s) {
+		return []byte{1}, nil
+	}
+	return []byte{0}, nil
+}
+
+func (sec *iotexSecp256r1) Name() string {
+	return "IOTEX_SECP256R1"
 }
