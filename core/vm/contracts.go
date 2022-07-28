@@ -160,35 +160,6 @@ func RunPrecompiledContract(p PrecompiledContract, input []byte, suppliedGas uin
 	return output, suppliedGas, err
 }
 
-var (
-	errSecp256r1InvalidInputLength = errors.New("invalid input length")
-	errSecp256r1InvalidCurvePoint  = errors.New("invalid curve point")
-)
-
-type secp256r1 struct{}
-
-func (s *secp256r1) RequiredGas(input []byte) uint64 {
-	return params.EcrecoverGas
-}
-
-func (sec *secp256r1) Run(input []byte) ([]byte, error) {
-	if len(input) <= 96 {
-		return nil, errSecp256r1InvalidInputLength
-	}
-	hash := input[:32]
-	r := new(big.Int).SetBytes(input[32:64])
-	s := new(big.Int).SetBytes(input[64:96])
-	curve := elliptic.P256()
-	x, y := elliptic.Unmarshal(curve, input[96:])
-	if x == nil || y == nil {
-		return nil, errSecp256r1InvalidCurvePoint
-	}
-	if ecdsa.Verify(&ecdsa.PublicKey{Curve: curve, X: x, Y: y}, hash, r, s) {
-		return []byte{1}, nil
-	}
-	return []byte{0}, nil
-}
-
 // ECRECOVER implemented as a native contract.
 type ecrecover struct{}
 
@@ -1074,4 +1045,34 @@ func (c *bls12381MapG2) Run(input []byte) ([]byte, error) {
 
 	// Encode the G2 point to 256 bytes
 	return g.EncodePoint(r), nil
+}
+
+var (
+	errSecp256r1InvalidInputLength = errors.New("invalid input length")
+	errSecp256r1InvalidCurvePoint  = errors.New("invalid curve point")
+)
+
+// secp256r1 implements secp256r1 signature verification
+type secp256r1 struct{}
+
+func (s *secp256r1) RequiredGas(input []byte) uint64 {
+	return params.EcrecoverGas
+}
+
+func (sec *secp256r1) Run(input []byte) ([]byte, error) {
+	if len(input) <= 96 {
+		return nil, errSecp256r1InvalidInputLength
+	}
+	hash := input[:32]
+	r := new(big.Int).SetBytes(input[32:64])
+	s := new(big.Int).SetBytes(input[64:96])
+	curve := elliptic.P256()
+	x, y := elliptic.Unmarshal(curve, input[96:])
+	if x == nil || y == nil {
+		return nil, errSecp256r1InvalidCurvePoint
+	}
+	if ecdsa.Verify(&ecdsa.PublicKey{Curve: curve, X: x, Y: y}, hash, r, s) {
+		return []byte{1}, nil
+	}
+	return []byte{0}, nil
 }
