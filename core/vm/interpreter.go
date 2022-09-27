@@ -147,8 +147,9 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		// For optimisation reason we're using uint64 as the program counter.
 		// It's theoretically possible to go above 2^64. The YP defines the PC
 		// to be uint256. Practically much less so feasible.
-		pc   = uint64(0) // program counter
-		cost uint64
+		pc                     = uint64(0) // program counter
+		cost                   uint64
+		refundBeforeDynamicGas uint64
 		// copies used by tracer
 		pcCopy  uint64 // needed for the deferred EVMLogger
 		gasCopy uint64 // for EVMLogger to log gas remaining before execution
@@ -197,6 +198,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		if !contract.UseGas(cost) {
 			return nil, ErrOutOfGas
 		}
+		refundBeforeDynamicGas = in.evm.StateDB.GetRefund()
 		if operation.dynamicGas != nil {
 			// All ops with a dynamic memory usage also has a dynamic gas cost.
 			var memorySize uint64
@@ -233,7 +235,12 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		}
 		// execute the operation
 		res, err = operation.execute(&pc, in, callContext)
+		in.evm.TxContext.HitErrWriteProtection = false
 		if err != nil {
+			if err == ErrWriteProtection {
+				in.evm.TxContext.HitErrWriteProtection = true
+				in.evm.TxContext.RefundBeforeDynamicGas = refundBeforeDynamicGas
+			}
 			break
 		}
 		pc++
