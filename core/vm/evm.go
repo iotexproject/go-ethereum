@@ -81,10 +81,11 @@ type BlockContext struct {
 // All fields can change between transactions.
 type TxContext struct {
 	// Message information
-	Origin     common.Address // Provides information for ORIGIN
-	GasPrice   *big.Int       // Provides information for GASPRICE (and is used to zero the basefee if NoBaseFee is set)
-	BlobHashes []common.Hash  // Provides information for BLOBHASH
-	BlobFeeCap *big.Int       // Is used to zero the blobbasefee if NoBaseFee is set
+	Origin                  common.Address // Provides information for ORIGIN
+	GasPrice                *big.Int       // Provides information for GASPRICE (and is used to zero the basefee if NoBaseFee is set)
+	BlobHashes              []common.Hash  // Provides information for BLOBHASH
+	BlobFeeCap              *big.Int       // Is used to zero the blobbasefee if NoBaseFee is set
+	DeltaRefundByDynamicGas int64          // difference of refund due to dynamicGas
 }
 
 // EVM is the Ethereum Virtual Machine base object and provides
@@ -440,7 +441,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 	// Ensure there's no existing contract already at the designated address
 	contractHash := evm.StateDB.GetCodeHash(address)
-	if evm.StateDB.GetNonce(address) != 0 || (contractHash != (common.Hash{}) && contractHash != types.EmptyCodeHash) {
+	if !evm.StateDB.IsNewAccount(address) || (contractHash != (common.Hash{}) && contractHash != types.EmptyCodeHash) {
 		return nil, common.Address{}, 0, ErrContractAddressCollision
 	}
 	// Create a new account on the state

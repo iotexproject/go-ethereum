@@ -1,23 +1,36 @@
-name: i386 linux tests
+name: Go
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  workflow_dispatch:
 
 jobs:
+
   build:
-    runs-on: self-hosted
+    name: Build
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Go
+
+      - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: 1.21.4
-      - name: Run tests
-        run: go test -short ./...
-        env:
-          GOOS: linux
-          GOARCH: 386
+          go-version: ^1.18
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: |
+          go get -v -t -d ./...
+          if [ -f Gopkg.toml ]; then
+              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              dep ensure
+          fi
+
+      - name: Build
+        run: go run build/ci.go install ./cmd/geth
+
+      - name: Test
+        run: go test -v -short ./...

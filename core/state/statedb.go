@@ -288,6 +288,11 @@ func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
 	return common.U2560
 }
 
+// IsNewAccount returns true if this is a new account
+func (s *StateDB) IsNewAccount(addr common.Address) bool {
+	return s.GetNonce(addr) == 0
+}
+
 // GetNonce retrieves the nonce from the given address or 0 if object not found
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
 	stateObject := s.getStateObject(addr)
