@@ -123,6 +123,8 @@ var PrecompiledContractsCancun = PrecompiledContracts{
 	common.BytesToAddress([]byte{0x8}): &bn256PairingIstanbul{},
 	common.BytesToAddress([]byte{0x9}): &blake2F{},
 	common.BytesToAddress([]byte{0xa}): &kzgPointEvaluation{},
+
+	common.BytesToAddress([]byte{128, 1}): &iotexSecp256r1{},
 }
 
 // PrecompiledContractsPrague contains the set of pre-compiled Ethereum
