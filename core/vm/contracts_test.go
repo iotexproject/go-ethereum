@@ -73,6 +73,7 @@ var allPrecompiles = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{0x0f, 0x11}): &bls12381MapG1{},
 	common.BytesToAddress([]byte{0x0f, 0x12}): &bls12381MapG2{},
 	common.BytesToAddress([]byte{128, 1}):     &secp256r1{},
+	common.BytesToAddress([]byte{128, 2}):     &scryptHash{},
 }
 
 // EIP-152 test vectors
@@ -241,6 +242,16 @@ func BenchmarkPrecompiledSha256(bench *testing.B) {
 	benchmarkPrecompiled("02", t, bench)
 }
 
+// Benchmarks the sample inputs from the ScryptHash precompile.
+func BenchmarkPrecompiledScryptHash(bench *testing.B) {
+	t := precompiledTest{
+		Input:    "00000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000160000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000050000000020000000000000000000000000000000000000000000000000000000000000000ab04ea90eb7d931cbbaa94a11cb3907809c13262dd37acc526e4b4a628e43b111c7fffff00000089929df805000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000050000000020000000000000000000000000000000000000000000000000000000000000000ab04ea90eb7d931cbbaa94a11cb3907809c13262dd37acc526e4b4a628e43b111c7fffff00000089929df80500000000000000000000000000000000",
+		Expected: "0000000a1c6f38ac57d1fb970bdbb316cc8981b928d4ac423c47efc13ead7194",
+		Name:     "128",
+	}
+	benchmarkPrecompiled("8002", t, bench)
+}
+
 // Benchmarks the sample inputs from the RIPEMD precompile.
 func BenchmarkPrecompiledRipeMD(bench *testing.B) {
 	t := precompiledTest{
@@ -308,6 +319,14 @@ func TestPrecompiledSecp256r1Fail(t *testing.T) {
 
 func TestPrecompiledSecp256r1(t *testing.T) {
 	testJson("secp256r1", "8001", t)
+}
+
+func TestPrecompiledScryptHashFail(t *testing.T) {
+	testJsonFail("scrypthash", "8002", t)
+}
+
+func TestPrecompiledScryptHash(t *testing.T) {
+	testJson("scrypthash", "8002", t)
 }
 
 func testJson(name, addr string, t *testing.T) {

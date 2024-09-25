@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -109,6 +110,7 @@ var PrecompiledContractsCancun = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{9}):      &blake2F{},
 	common.BytesToAddress([]byte{0x0a}):   &kzgPointEvaluation{},
 	common.BytesToAddress([]byte{128, 1}): &secp256r1{},
+	common.BytesToAddress([]byte{128, 2}): &scryptHash{},
 }
 
 // PrecompiledContractsBLS contains the set of pre-compiled Ethereum
@@ -131,6 +133,8 @@ var (
 	PrecompiledAddressesIstanbul  []common.Address
 	PrecompiledAddressesByzantium []common.Address
 	PrecompiledAddressesHomestead []common.Address
+
+	scryptArguments abi.Arguments
 )
 
 func init() {
@@ -149,6 +153,57 @@ func init() {
 	for k := range PrecompiledContractsCancun {
 		PrecompiledAddressesCancun = append(PrecompiledAddressesCancun, k)
 	}
+
+	bytesTy, err := abi.NewType("bytes", "", nil)
+	if err != nil {
+		panic(err)
+	}
+	uint64Ty, err := abi.NewType("uint64", "", nil)
+	if err != nil {
+		panic(err)
+	}
+	uint32Ty, err := abi.NewType("uint32", "", nil)
+	if err != nil {
+		panic(err)
+	}
+	scryptArguments = append(
+		scryptArguments,
+		abi.Argument{
+			Name:    "password",
+			Indexed: false,
+			Type:    bytesTy,
+		},
+		abi.Argument{
+			Name:    "salt",
+			Indexed: false,
+			Type:    bytesTy,
+		},
+		abi.Argument{
+			Name:    "N",
+			Indexed: false,
+			Type:    uint64Ty,
+		},
+		abi.Argument{
+			Name:    "r",
+			Indexed: false,
+			Type:    uint32Ty,
+		},
+		abi.Argument{
+			Name:    "p",
+			Indexed: false,
+			Type:    uint32Ty,
+		},
+		abi.Argument{
+			Name:    "keyLen",
+			Indexed: false,
+			Type:    uint32Ty,
+		},
+		abi.Argument{
+			Name:    "mode",
+			Indexed: false,
+			Type:    uint32Ty,
+		},
+	)
 }
 
 // ActivePrecompiles returns the precompiles enabled with the current configuration.
@@ -1167,4 +1222,35 @@ func (sec *secp256r1) Run(input []byte) ([]byte, error) {
 		return []byte{1}, nil
 	}
 	return []byte{0}, nil
+}
+
+// scryptHash implements scrypt hash
+type scryptHash struct{}
+
+func (s *scryptHash) RequiredGas(input []byte) uint64 {
+	return uint64(len(input)+31)/32*params.ScryptPerWordGas + params.ScryptBaseGas
+}
+
+func (sec *scryptHash) Run(input []byte) ([]byte, error) {
+	values, err := scryptArguments.Unpack(input)
+	if err != nil {
+		return nil, err
+	}
+	password := values[0].([]byte)
+	salt := values[1].([]byte)
+	N := values[2].(uint64)
+	r := values[3].(uint32)
+	p := values[4].(uint32)
+	keyLen := values[5].(uint32)
+	mode := values[6].(uint32)
+
+	h, err := Key(password, salt, N, r, p, keyLen, mode)
+	if err != nil {
+		return nil, err
+	}
+	mid := uint32(len(h) / 2)
+	for i := uint32(0); i < mid; i++ {
+		h[i], h[keyLen-i-1] = h[keyLen-i-1], h[i]
+	}
+	return h[:], nil
 }
