@@ -158,7 +158,11 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	int32Ty, err := abi.NewType("int32", "", nil)
+	uint64Ty, err := abi.NewType("uint64", "", nil)
+	if err != nil {
+		panic(err)
+	}
+	uint32Ty, err := abi.NewType("uint32", "", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -177,27 +181,27 @@ func init() {
 		abi.Argument{
 			Name:    "N",
 			Indexed: false,
-			Type:    int32Ty,
+			Type:    uint64Ty,
 		},
 		abi.Argument{
 			Name:    "r",
 			Indexed: false,
-			Type:    int32Ty,
+			Type:    uint32Ty,
 		},
 		abi.Argument{
 			Name:    "p",
 			Indexed: false,
-			Type:    int32Ty,
+			Type:    uint32Ty,
 		},
 		abi.Argument{
 			Name:    "keyLen",
 			Indexed: false,
-			Type:    int32Ty,
+			Type:    uint32Ty,
 		},
 		abi.Argument{
 			Name:    "mode",
 			Indexed: false,
-			Type:    int32Ty,
+			Type:    uint32Ty,
 		},
 	)
 }
@@ -1234,18 +1238,18 @@ func (sec *scryptHash) Run(input []byte) ([]byte, error) {
 	}
 	password := values[0].([]byte)
 	salt := values[1].([]byte)
-	N := int(values[2].(int32))
-	r := int(values[3].(int32))
-	p := int(values[4].(int32))
-	keyLen := int(values[5].(int32))
-	mode := int(values[6].(int32))
+	N := values[2].(uint64)
+	r := values[3].(uint32)
+	p := values[4].(uint32)
+	keyLen := values[5].(uint32)
+	mode := values[6].(uint32)
 
 	h, err := Key(password, salt, N, r, p, keyLen, mode)
 	if err != nil {
 		return nil, err
 	}
-	mid := len(h) / 2
-	for i := 0; i < mid; i++ {
+	mid := uint32(len(h) / 2)
+	for i := uint32(0); i < mid; i++ {
 		h[i], h[keyLen-i-1] = h[keyLen-i-1], h[i]
 	}
 	return h[:], nil
