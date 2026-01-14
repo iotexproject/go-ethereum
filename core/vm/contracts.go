@@ -141,6 +141,9 @@ var PrecompiledContractsPrague = PrecompiledContracts{
 	common.BytesToAddress([]byte{0x0f}): &bls12381Pairing{},
 	common.BytesToAddress([]byte{0x10}): &bls12381MapG1{},
 	common.BytesToAddress([]byte{0x11}): &bls12381MapG2{},
+
+	common.BytesToAddress([]byte{128, 1}): &secp256r1{},
+	common.BytesToAddress([]byte{128, 2}): &scryptHash{},
 }
 
 var PrecompiledContractsBLS = PrecompiledContractsPrague
