@@ -603,9 +603,11 @@ func (evm *EVM) initNewContract(contract *Contract, address common.Address) ([]b
 		}
 	}
 
-	if len(ret) > 0 {
-		evm.StateDB.SetCode(address, ret, tracing.CodeChangeContractCreation)
-	}
+	// IoTeX: always call SetCode, even if the initcode returned empty code.
+	// Upstream (go-ethereum #32916, b6a4ac996) skips SetCode when len(ret) == 0,
+	// but IoTeX's StateDB sets the account CodeHash (and stores the code) on
+	// SetCode, so skipping it would change account state of historical blocks.
+	evm.StateDB.SetCode(address, ret, tracing.CodeChangeContractCreation)
 	return ret, nil
 }
 
