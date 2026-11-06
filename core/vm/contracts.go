@@ -180,6 +180,9 @@ var PrecompiledContractsOsaka = PrecompiledContracts{
 	common.BytesToAddress([]byte{0x11}): &bls12381MapG2{},
 
 	common.BytesToAddress([]byte{0x1, 0x00}): &p256Verify{},
+
+	common.BytesToAddress([]byte{128, 1}): &iotexSecp256r1{},
+	common.BytesToAddress([]byte{128, 2}): &scryptHash{},
 }
 
 // PrecompiledContractsP256Verify contains the precompiled Ethereum
